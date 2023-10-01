@@ -6,7 +6,7 @@ resource "google_storage_bucket" "website" {
   storage_class = "STANDARD"
   force_destroy = true
   website {
-    main_page_suffix = index.html
+    main_page_suffix = "index.html"
   }
 }
 
@@ -32,7 +32,7 @@ resource "google_storage_object_access_control" "public_rule_for_pic" {
 
 resource "google_storage_bucket_object" "static_site_src" {
   name   = "index.html"
-  source = "../website/index.html"
+  source = "../../website/index.html"
   bucket = google_storage_bucket.website.name
 }
 
@@ -40,7 +40,7 @@ resource "google_storage_bucket_object" "static_site_src" {
 
 resource "google_storage_bucket_object" "static_site_pic_src" {
   name   = "profile.jpg"
-  source = "../website/profile.jpg"
+  source = "../../website/profile.jpg"
   bucket = google_storage_bucket.website.name
 }
 
@@ -112,8 +112,8 @@ resource "google_compute_target_http_proxy" "website" {
   provider         = google-beta
   name             = "website-target-proxy"
   url_map          = google_compute_url_map.website.self_link
-  ssl_certificates = [google_compute_managed_ssl_certificate.website.name]
-  depends_on       = [google_compute_managed_ssl_certificate.website]
+  #ssl_certificates = [google_compute_managed_ssl_certificate.website.name]
+  #depends_on       = [google_compute_managed_ssl_certificate.website]
 }
 
 # GCP forwarding rule
