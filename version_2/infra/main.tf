@@ -65,7 +65,7 @@ module "global_lb" {
     path_matchers = {
       allpaths = {
         default_service = "website-bucket"
-        
+
       }
     }
   }

@@ -10,6 +10,8 @@ During this project I use the following APIs and Services:
 - External App Load Balancer
 - Cloud DNS
 
+I deploy the website through CI/CD pipeline and I use remote backend for the tf_state file which is managed by Gitlab!
+
 The same website can be found on:
 https://lakatostomi.github.io/
 
