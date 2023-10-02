@@ -1,0 +1,86 @@
+default:
+  image:
+    name: "$CI_TEMPLATE_REGISTRY_HOST/gitlab-org/terraform-images/stable:latest"
+
+  cache:
+    key: "${TF_ROOT}"
+    paths:
+      - ${TF_ROOT}/.terraform/
+
+variables:
+  TF_ROOT: ${CI_PROJECT_DIR}/version_2/infra
+  TF_STATE_NAME: default
+
+before_script:
+    - export GOOGLE_APPLICATION_CREDENTIALS=$SA
+
+stages:
+  - validate
+  - build
+  - deploy
+  - destroy
+
+.terraform:fmt:
+  stage: validate
+  script:
+    - gitlab-terraform fmt
+  allow_failure: true
+
+.terraform:validate:
+  stage: validate
+  script:
+    - gitlab-terraform validate
+
+.terraform:build:
+  stage: build
+  script:
+    - gitlab-terraform plan -var="project_id=${PROJECT_ID}" -var="bucket_name=${BUCKET_NAME}" -var="dns_managed_zone=${DNS_MANAGED_ZONE}" -var="dns_record_set=${DNS_RECORD_SET}"
+    - gitlab-terraform plan-json
+  resource_group: ${TF_STATE_NAME}
+  artifacts:
+    public: false
+    paths:
+      - ${TF_ROOT}/plan.cache
+    reports:
+      terraform: ${TF_ROOT}/plan.json
+
+.terraform:deploy:
+  stage: deploy
+  script:
+    - gitlab-terraform apply
+  resource_group: ${TF_STATE_NAME}
+
+.terraform:destroy:
+  stage: destroy
+  script:
+    - gitlab-terraform destroy -var="project_id=${PROJECT_ID}" -var="bucket_name=${BUCKET_NAME}" -var="dns_managed_zone=${DNS_MANAGED_ZONE}" -var="dns_record_set=${DNS_RECORD_SET}"
+  resource_group: ${TF_STATE_NAME}
+  when: manual
+    
+fmt:
+  extends: .terraform:fmt
+  needs: []
+
+validate:
+  extends: .terraform:validate
+  needs: []
+
+build:
+  extends: .terraform:build
+  environment:
+    name: $TF_STATE_NAME
+    action: prepare
+
+deploy:
+  extends: .terraform:deploy
+  dependencies:
+    - build
+  environment:
+    name: $TF_STATE_NAME
+    action: start
+
+destroy:
+  extends: .terraform:destroy
+  environment:
+    name: $TF_STATE_NAME
+    action: stop
